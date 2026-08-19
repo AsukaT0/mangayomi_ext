@@ -168,7 +168,7 @@ class DefaultExtension extends MProvider {
           try {
             const recommendations = await this._getRecommendations(detail.name || detail.rus_name);
             if (recommendations && recommendations.length > 0) {
-              detail.related = recommendations;
+              anime.related = recommendations;
             }
           } catch (e) {
             // молча игнорируем ошибки рекомендаций
