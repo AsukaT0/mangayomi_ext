@@ -164,7 +164,7 @@ class DefaultExtension extends MProvider {
         if (item.cover) {
             anime.imageUrl = item.cover.default || item.cover.md || "";
         }
-        const recommendations = await this._getRecommendations(detail.name || detail.rus_name);
+        const recommendations = await this._getRecommendations(slug);
         if (recommendations && recommendations.length > 0) {
             anime.related = recommendations;
         }
