@@ -164,17 +164,11 @@ class DefaultExtension extends MProvider {
         if (item.cover) {
             anime.imageUrl = item.cover.default || item.cover.md || "";
         }
-         const detail = await this._getDetail(slug); // твоя текущая логика
-          // Получаем рекомендации
-          try {
-            const recommendations = await this._getRecommendations(detail.name || detail.rus_name);
-            if (recommendations && recommendations.length > 0) {
-              anime.related = recommendations;
-            }
-          } catch (e) {
-            // молча игнорируем ошибки рекомендаций
-          }
-
+        const recommendations = await this._getRecommendations(detail.name || detail.rus_name);
+        if (recommendations && recommendations.length > 0) {
+            anime.related = recommendations;
+        }
+         
         const animeId = item.id;
         if (animeId) {
             let epData = await this._fetchApi(`/episodes?manga_id=${animeId}`);
