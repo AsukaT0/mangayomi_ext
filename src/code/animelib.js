@@ -104,7 +104,7 @@ class DefaultExtension extends MProvider {
     }
 
     async getLatestUpdates(page) {
-        const data = await this._fetchApi(`/anime?site_id[]=5&sort_by=last_item_at&sort_type=desc&page=${page}`);
+        const data = await this._fetchApi(`/anime?site_id[]=5&sort_by=last_episode_at&sort_type=desc&page=${page}`);
         if (!data) return { list: [], hasNextPage: false };
         return {
             list: this._parseList(data),
