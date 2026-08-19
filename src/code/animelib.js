@@ -66,12 +66,12 @@ class DefaultExtension extends MProvider {
         return String(summary);
     }
 
-    _animeFromJsonObject(json) {
+    _animeFromJsonObject(json) {        
         const slug = json["slug_url"] || json["slug"] || "";
         const name = json["rus_name"] || json["name"] || json["eng_name"] || "";
-        const imageUrl = cover["default"] || cover["md"] || cover["thumbnail"] || "";
         const cover = json["cover"] || {};
-        
+        const imageUrl = cover["default"] || cover["md"] || cover["thumbnail"] || "";
+
         return {
             name: name,
             link: `/anime/${slug}`,
