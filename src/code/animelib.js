@@ -70,8 +70,7 @@ class DefaultExtension extends MProvider {
         const slug = json["slug_url"] || json["slug"] || "";
         const name = json["rus_name"] || json["name"] || json["eng_name"] || "";
         const cover = json["cover"] || {};
-        const imageUrl = cover["default"] || cover["md"] || cover["thumbnail"] || "";
-
+            
         return {
             name: name,
             link: `/anime/${slug}`,
@@ -88,6 +87,22 @@ class DefaultExtension extends MProvider {
         if (!Array.isArray(data)) return [];
 
         return data.map(item => this._animeFromJsonObject(item));
+    }
+    async _getRecommendations(title) {
+      if (!title) return [];
+      // Пример запроса (замени URL и параметры под свой источник)
+      const res = await this.request(`/anime/${encodeURIComponent(title)}/relations`);
+      const data = JSON.parse(res);
+      if (!data?.data) return [];
+      return data.data.map(item => {
+        const m = item.media;
+        return {
+          name: m.rus_name || m.name,
+          link: `/anime/${m.slug_url}`,           // ссылка внутри источника
+          imageUrl: m.cover?.default || m.cover?.md,
+          // description, author и т.д. можно не заполнять
+        };
+      });
     }
 
     get supportsLatest() {
@@ -136,6 +151,7 @@ class DefaultExtension extends MProvider {
             status: 0,
             chapters: []
         };
+        
 
         const statusLabel = typeof item.status === "object" ? item.status.label : item.status;
         if (statusLabel === "Завершен" || statusLabel === "Вышел") {
@@ -147,6 +163,16 @@ class DefaultExtension extends MProvider {
         if (item.cover) {
             anime.imageUrl = item.cover.default || item.cover.md || "";
         }
+         const detail = await this._getDetail(slug); // твоя текущая логика
+          // Получаем рекомендации
+          try {
+            const recommendations = await this._getRecommendations(detail.name || detail.rus_name);
+            if (recommendations && recommendations.length > 0) {
+              detail.related = recommendations;
+            }
+          } catch (e) {
+            // молча игнорируем ошибки рекомендаций
+          }
 
         const animeId = item.id;
         if (animeId) {
