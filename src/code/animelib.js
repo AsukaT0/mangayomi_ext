@@ -6,7 +6,7 @@ const mangayomiSources = [{
     "iconUrl": "https://animelib.org/",
     "typeSource": "single",
     "itemType": 1,
-    "version": "0.0.1",
+    "version": "0.0.8",
     "pkgPath": "",
     "notes": ""
 }];
@@ -89,22 +89,6 @@ class DefaultExtension extends MProvider {
 
         return data.map(item => this._animeFromJsonObject(item));
     }
-    async _getRecommendations(title) {
-      if (!title) return [];
-      // Пример запроса (замени URL и параметры под свой источник)
-      const res = await this.request(`/anime/${encodeURIComponent(title)}/relations`);
-      const data = JSON.parse(res);
-      if (!data?.data) return [];
-      return data.data.map(item => {
-        const m = item.media;
-        return {
-          name: m.rus_name || m.name,
-          link: `/anime/${m.slug_url}`,           // ссылка внутри источника
-          imageUrl: m.cover?.default || m.cover?.md,
-          // description, author и т.д. можно не заполнять
-        };
-      });
-    }
 
     get supportsLatest() {
         return true;
@@ -150,7 +134,8 @@ class DefaultExtension extends MProvider {
             description: this._parseDescription(item.summary),
             genre: Array.isArray(item.genres) ? item.genres.map(g => (typeof g === "object" ? g.name : g)) : [],
             status: 0,
-            chapters: []
+            chapters: [],
+            related: []
         };
         
 
@@ -163,10 +148,6 @@ class DefaultExtension extends MProvider {
 
         if (item.cover) {
             anime.imageUrl = item.cover.default || item.cover.md || "";
-        }
-        const recommendations = await this._getRecommendations(slug);
-        if (recommendations && recommendations.length > 0) {
-            anime.related = recommendations;
         }
          
         const animeId = item.id;
@@ -225,7 +206,7 @@ class DefaultExtension extends MProvider {
             url: src,    
             quality: `${team} • ${playerName}`,    
             originalUrl: src,    
-            playerType: "webview",    
+            playerType: "iframe",    
             headers: {    
                 "Referer": this.baseUrl,    
                 "Origin": this.baseUrl    
