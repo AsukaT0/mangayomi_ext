@@ -18,7 +18,7 @@ class DefaultExtension extends MProvider {
         this.client = new Client();
         this.baseUrl = "https://slashlib.me";
         this.apiUrl = "https://hapi.hentaicdn.org/api";
-        this.siteId = "2"; // I
+        this.siteId = "4"; // I
     }
 
     getHeaders() {
@@ -27,7 +27,7 @@ class DefaultExtension extends MProvider {
             "Accept": "application/json, text/plain, */*",
             "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
             "Referer": `${this.baseUrl}/`,
-            "Site-Id":"2"
+            "Site-Id":"4"
         };
     }
     
