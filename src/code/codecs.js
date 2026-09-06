@@ -1,4 +1,4 @@
-rot18(value) {
+function rot18(value) {
   const originalSrc = value;
   const shiftedSrc = originalSrc.replace(/[a-zA-Z]/g, function (char) {
     const code = char.charCodeAt(0);
@@ -11,7 +11,7 @@ rot18(value) {
   });
     return decodeBase64(shiftedSrc);
 }
-decodeBase64(input) {
+function decodeBase64(input) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
   let str = String(input).replace(/=+$/, '');
   let output = '';
@@ -29,7 +29,7 @@ decodeBase64(input) {
   }
   return output;
 }
-normalizeUrl(url, parent) {
+function normalizeUrl(url, parent) {
     if (!url) return "";
     if (url.indexOf("//") === 0) {
       return "https:" + url;
