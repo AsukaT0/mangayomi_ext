@@ -29,3 +29,17 @@ decodeBase64(input) {
   }
   return output;
 }
+normalizeUrl(url, parent) {
+    if (!url) return "";
+    if (url.indexOf("//") === 0) {
+      return "https:" + url;
+    }
+    if (url.indexOf("http://") === 0 || url.indexOf("https://") === 0) {
+      return url;
+    }
+    const base = parent || this.YUMMY_URL;
+    if (url.indexOf("/") === 0) {
+      return base + url;
+    }
+    return base + "/" + url;
+  }
