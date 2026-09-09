@@ -12,14 +12,14 @@
         "hasCloudflare": false,
         "sourceCodeUrl": "https://raw.githubusercontent.com/AsukaT0/mangayomi_ext/refs/heads/main/src/code/yummyanime.js",
         "apiUrl": "",
-        "version": "0.0.1",
+        "version": "0.0.3",
         "isManga": false,
         "itemType": 1,
         "isFullData": false,
         "appMinVerReq": "0.5.0",
         "additionalParams": "",
         "sourceCodeLanguage": 1,
-        "notes": ""
+        "notes": "Приоритет плееров: Kodik - 1, Sibnet - 2, CVH - 3. Остальные в разработке"
     },
     {
         "name": "Shikimori",

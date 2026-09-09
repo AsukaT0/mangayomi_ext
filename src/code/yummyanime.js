@@ -5,7 +5,7 @@
       baseUrl: "https://ru.yummyani.me",
       apiUrl: "https://api.yani.tv",
       iconUrl: "https://ru.yummyani.me/favicon.ico",
-      version: "0.0.1",
+      version: "0.0.3",
       isNsfw: false,
       isManga: false,
       pkgName: "yummyanime",
@@ -132,7 +132,7 @@
     }
   
     async getPopular(page) {
-      const response = await this.yummyGet("/anime");
+      const response = await this.yummyGet(`/anime?offset=${(page-1)*20}`);
       const items = this.extractAnimeArray1(response);
       return {
         list: items,
@@ -145,14 +145,19 @@
     }
   
     async getLatestUpdates(page) {
-      throw new Error("getLatestUpdates not implemented");
+      const response = await this.yummyGet("/anime?sort_forward=false&sort=id");
+      const items = this.extractAnimeArray1(response);
+      return {
+        list: items,
+        hasNextPage: items.length == 20
+      };
     }
   
     async search(query, page, filters) {
       const limit = 30;
       const offset = (page - 1) * limit;
       let genres = "", exgenres = "";
-      if (filters && Array.isArray(filters)) {
+      /*if (filters && Array.isArray(filters)) {
         filters.forEach(filter => {
             if (filter.type === "GenreFilter" && Array.isArray(filter.state)) {
                 filter.state.filter(e => e.state).map((item,index)=>{
@@ -170,18 +175,18 @@
                 })
             } 
         });
-        }
+        }*/
         let params = {
         q: query,
         limit: limit,
         offset: offset,
       };
-      if(genres != ""){
+      /*if(genres != ""){
         params.genre =  genres;
       }
       if(exgenres != ""){
         params.exclude_genres =  exgenres;
-      }      
+      }      */
       const response = await this.yummyGet("/anime",params );
       
       const items = this.extractAnimeArray1(response);
@@ -190,80 +195,98 @@
         hasNextPage: items.length == 20
       };
     }
-  
-    async getDetail(url) {
-      const slug = this.extractSlug(url);
-      const anime = await this.getAnime(slug, true);
-  
-      if (!anime) {
-        throw new Error("Anime not found");
-      }
-  
-      const imageTile = this.normalizeUrl(this.getPoster(anime) || "");
-      const videos = (anime.videos || []).slice().sort((a, b) => {
-        const isKodikA = (a.data && a.data.player && a.data.player.toLowerCase().includes('kodik')) ||
-                        (a.iframe_url && a.iframe_url.toLowerCase().includes('kodik'));
-        const isKodikB = (b.data && b.data.player && b.data.player.toLowerCase().includes('kodik')) ||
-                        (b.iframe_url && b.iframe_url.toLowerCase().includes('kodik'));
-      
-        if (isKodikA && !isKodikB) return -1;
-        if (!isKodikA && isKodikB) return 1;
-        return 0;
-      });
-      const episodes = [];
-  
-      for (const video of videos) {
-        if (!video || video.number === undefined || video.number === null) {
-          continue;
-        }
-  
-        let dubbing = video.data && video.data.dubbing ? video.data.dubbing : "";
-        let episodeName = String(video.number);
-  
-        if (dubbing) {
-          episodeName += " — " + dubbing;
-        }
-        let chapterUrl = `${this.normalizeUrl(video.iframe_url)}`;
-        if(chapterUrl.includes('iframeCVH'))
-          chapterUrl +=  `&chapter=${episodeName}`
-        episodes.push({
-          name: episodeName,
-          url: chapterUrl,
-          scanlator: dubbing || "YummyAnime",
-          dateUpload: video.date ? String(video.date) : null
-        });
-      }
-      let type = 16;
-      switch(anime.type.value){
-       case 1:
-       case  6:
-        type = 13;
-       break;
-       case 2:
-       case 3:
-       type = 12;
-       break;
-       case 4:
-       type = 10;
-       break; 
-       case 5:
-       type = 14;
-       break;
-       case  7:
-       type = 11;
-       break;
-      }
-  
-      return {
-        name: anime.title || "",
-        description: anime.description || "",
-        imageUrl: imageTile,
-        author: "",
-        genre: this.extractGenres(anime),
-        status: this.convertStatus(anime),
-        episodes: episodes
-      };
+  async getDetail(url) {
+  const slug = this.extractSlug(url);
+  const anime = await this.getAnime(slug, true);
+
+  if (!anime) {
+    throw new Error("Anime not found");
+  }
+
+  const imageTile = this.normalizeUrl(this.getPoster(anime) || "");
+  const videos = (anime.videos || []).slice().sort((a, b) => {
+    const priorityA = this.getPlayerPriority(a);
+    const priorityB = this.getPlayerPriority(b);
+    return priorityA - priorityB;
+  });
+
+  const episodes = [];
+  const addedEpisodeNumbers = new Set(); // Mножество для отслеживания добавленных серий
+
+  for (const video of videos) {
+    if (!video || video.number === undefined || video.number === null) {
+      continue;
     }
+
+    // Если серия с таким номером уже добавлена — пропускаем
+    
+
+    let dubbing = video.data && video.data.dubbing ? video.data.dubbing : "";
+    let episodeName = String(video.number);
+
+    if (dubbing) {
+      episodeName += " — " + dubbing;
+    }
+    let chapterUrl = `${this.normalizeUrl(video.iframe_url)}`;
+    if (chapterUrl.includes('iframeCVH')) {
+      chapterUrl += `&chapter=${episodeName}`;
+    }
+    if (addedEpisodeNumbers.has(episodeName)) {
+      continue;
+    }
+    episodes.push({
+      name: episodeName,
+      url: chapterUrl,
+      scanlator: dubbing || "YummyAnime",
+      dateUpload: video.date ? String(video.date) : null
+    });
+
+    // Фиксируем, что серия с этим номером обработана
+    addedEpisodeNumbers.add(episodeName);
+  }
+
+  let type = 16;
+  switch (anime.type.value) {
+    case 1:
+    case 6:
+      type = 13;
+      break;
+    case 2:
+    case 3:
+      type = 12;
+      break;
+    case 4:
+      type = 10;
+      break; 
+    case 5:
+      type = 14;
+      break;
+    case 7:
+      type = 11;
+      break;
+  }
+
+  return {
+    name: anime.title || "",
+    description: anime.description || "",
+    imageUrl: imageTile,
+    author: "",
+    type: type,
+    genre: this.extractGenres(anime),
+    status: this.convertStatus(anime),
+    episodes: episodes
+  };
+}
+getPlayerPriority(video) {
+  const player = (video.data?.player || "").toLowerCase();
+  const url = (video.iframe_url || "").toLowerCase();
+
+  if (player.includes('kodik') || url.includes('kodik')) return 1; // Самый высокий приоритет
+  if (player.includes('sibnet') || url.includes('sibnet')) return 2;
+  if (player.includes('iframeCVH') || url.includes('iframeCVH')) return 3;
+
+  return 99; // Для всех остальных плееров
+}
     async kodikParse(url) {
       const playerResponse = await this.client.get(url, {
         "Referer": this.YUMMY_URL,
@@ -394,7 +417,7 @@
       if (!links) {
         throw new Error("Kodik: links not found");
       }
-  
+      
       const result = [];
   
       for (const quality in links) {
@@ -404,10 +427,10 @@
         if (!item) continue;
         const src = item[0].src;
         let url2 = this.normalizeUrl(this.rot18(src));
-        url2 = url.replace(":hls", "").replace(":manifest.m3u8", "")
+        url2 = url2.replace(":hls", "").replace(":manifest.m3u8", "")
         result.push({
           url: url2,
-          originalUrl: url,
+          originalUrl: url.replace("720",quality).replace("360",quality).replace("480",quality),
           quality: quality
         });
       }
@@ -574,7 +597,7 @@
                 state: [
                     ["Ongoing", "status[]=ongoing"],
                 ].map(x => ({ type_name: 'CheckBox', name: x[0], value: x[1] }))
-            },*/
+            },
             {
                 type_name: "SortFilter",
                 type: "SortFilter",
@@ -621,7 +644,7 @@
 ],
                 ].map(x => ({ type_name: 'SelectOption', name: x[0], value: x[1] }))
             },
-            /*{
+            {
                 type_name: "GroupFilter",
                 type: "TagsFilter",
                 name: "Tags mode",
@@ -663,7 +686,7 @@
                     ["4-Koma", "b11fda93-8f1d-4bef-b2ed-8803d3733170"],
                 ].map(x => ({ type_name: 'TriState', name: x[0], value: x[1] }))
             },*/
-            {
+            /*{
                 type_name: "GroupFilter",
                 type: "GenreFilter",
                 name: "Жанры",
